@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROBO FORGE — 3D Robot Customizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --panel: #0d1520;
+    --panel2: #111d2e;
+    --accent: #00ffe7;
+    --accent2: #ff6b35;
+    --accent3: #a855f7;
+    --text: #c8deff;
+    --text-dim: #4a6a8a;
+    --border: #1a3050;
+    --glow: 0 0 20px rgba(0,255,231,0.3);
+    --glow2: 0 0 20px rgba(255,107,53,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .header-info {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .header-actions { display: flex; gap: 10px; }
+
+  /* MAIN LAYOUT */
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    width: 260px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  .part-categories {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-btn {
+    flex: 1;
+    padding: 8px 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .cat-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .cat-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(0,255,231,0.05);
+  }
+
+  .parts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .parts-grid::-webkit-scrollbar { width: 4px; }
+  .parts-grid::-webkit-scrollbar-track { background: var(--panel); }
+  .parts-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .part-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .part-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+  }
+
+  .part-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .part-card:hover::before { transform: scaleX(1); }
+  .part-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,255,231,0.07);
+    box-shadow: var(--glow);
+  }
+  .part-card.selected::before { transform: scaleX(1); }
+
+  .part-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle at 40% 35%, #162840, #080c10);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    font-size: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .part-preview canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .part-name {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .part-card.selected .part-name { color: var(--accent); }
+
+  .selected-badge {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--accent);
+    display: none;
+  }
+  .part-card.selected .selected-badge { display: block; }
+
+  /* CENTER - 3D VIEWPORT */
+  .viewport {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(ellipse at 50% 40%, #0d1e35 0%, #080c10 70%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #robot-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .viewport-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  .view-hint {
+    background: rgba(8,12,16,0.8);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    border-radius: 2px;
+  }
+
+  .scan-lines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .corner-deco {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .corner-deco.tl { top: 12px; left: 12px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+  .corner-deco.tr { top: 12px; right: 12px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+  .corner-deco.bl { bottom: 12px; left: 12px; border-bottom: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+  .corner-deco.br { bottom: 12px; right: 12px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+
+  .robot-name-display {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .robot-name-display h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+
+  .robot-name-display p {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    width: 260px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .color-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .color-zones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .color-zone {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .zone-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 80px;
+    letter-spacing: 1px;
+  }
+
+  .color-picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .color-swatch:hover { border-color: var(--accent); }
+
+  .color-swatch input[type="color"] {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .color-presets {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .preset-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .preset-dot:hover { transform: scale(1.3); border-color: white; }
+
+  /* MATERIAL SECTION */
+  .material-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .material-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .mat-btn {
+    padding: 8px 6px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .mat-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .mat-btn.active {
+    background: rgba(255,107,53,0.1);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    box-shadow: var(--glow2);
+  }
+
+  /* STATS */
+  .stats-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex: 1;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(26,48,80,0.5);
+  }
+
+  .stat-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+  .stat-value { font-size: 10px; color: var(--accent); }
+
+  /* ROBOT NAME */
+  .name-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .name-input {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+  }
+
+  .name-input:focus { border-color: var(--accent); box-shadow: var(--glow); }
+
+  /* EXPORT BUTTONS */
+  .export-section {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover::after { opacity: 1; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #080c10;
+    font-weight: 700;
+    box-shadow: var(--glow);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  .btn-secondary:hover { background: rgba(0,255,231,0.05); }
+
+  .btn-accent2 {
+    background: var(--accent2);
+    color: white;
+    font-weight: 700;
+    box-shadow: var(--glow2);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 20px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: var(--glow);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* LOADING */
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    transition: opacity 0.5s;
+  }
+
+  .loading-screen.hidden { opacity: 0; pointer-events: none; }
+
+  .loading-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    margin-bottom: 8px;
+  }
+
+  .loading-bar-wrap {
+    width: 200px;
+    height: 2px;
+    background: var(--border);
+    margin-top: 20px;
+    overflow: hidden;
+  }
+
+  .loading-bar {
+    height: 100%;
+    background: var(--accent);
+    box-shadow: var(--glow);
+    animation: loadBar 1.5s ease-in-out forwards;
+  }
+
+  @keyframes loadBar { from { width: 0; } to { width: 100%; } }
+
+  .loading-text {
+    margin-top: 12px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  /* SCROLLBAR */
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-track { background: var(--panel); }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* 3MF Badge */
+  .format-badge {
+    display: inline-block;
+    background: rgba(168,85,247,0.2);
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+
+  /* Responsive hint */
+  @media (max-width: 900px) {
+    .left-panel { width: 200px; }
+    .right-panel { width: 200px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">ROBO FORGE</div>
+  <div style="font-size:11px;letter-spacing:3px;color:var(--text-dim);">3D ROBOT CUSTOMIZER</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-text">INITIALIZING ENGINE...</div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">ROBO<span>FORGE</span></div>
+  <div class="header-info">3D ROBOT CUSTOMIZER · DRAG TO ROTATE · SCROLL TO ZOOM</div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="randomize()" style="padding:6px 14px;font-size:9px;">⚡ RANDOMIZE</button>
+    <button class="btn btn-secondary" onclick="resetCamera()" style="padding:6px 14px;font-size:9px;">⊙ RESET VIEW</button>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- LEFT PANEL: Part Selector -->
+  <div class="left-panel">
+    <div class="panel-title">SELECT PARTS</div>
+    <div class="part-categories" id="catTabs"></div>
+    <div class="parts-grid" id="partsGrid"></div>
+  </div>
+
+  <!-- CENTER: 3D Viewport -->
+  <div class="viewport">
+    <div class="scan-lines"></div>
+    <div class="corner-deco tl"></div>
+    <div class="corner-deco tr"></div>
+    <div class="corner-deco bl"></div>
+    <div class="corner-deco br"></div>
+    <div class="robot-name-display">
+      <h2 id="robotNameDisplay">UNIT-001</h2>
+      <p id="robotSubDisplay">CUSTOM BUILD · READY TO PRINT</p>
+    </div>
+    <canvas id="robot-canvas"></canvas>
+    <div class="viewport-overlay">
+      <div class="view-hint">🖱 DRAG TO ROTATE</div>
+      <div class="view-hint">⚙ SCROLL TO ZOOM</div>
+      <div class="view-hint">✋ RIGHT-DRAG TO PAN</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Colors & Export -->
+  <div class="right-panel">
+    <div class="name-section">
+      <div class="section-label">Robot Name</div>
+      <input type="text" class="name-input" id="robotName" value="UNIT-001" maxlength="12"
+        oninput="updateRobotName(this.value)">
+    </div>
+
+    <div class="color-section">
+      <div class="section-label">Color Zones</div>
+      <div class="color-zones" id="colorZones"></div>
+    </div>
+
+    <div class="material-section">
+      <div class="section-label">Material Finish</div>
+      <div class="material-btns">
+        <button class="mat-btn active" onclick="setMaterial('standard')" id="mat-standard">Standard</button>
+        <button class="mat-btn" onclick="setMaterial('metallic')" id="mat-metallic">Metallic</button>
+        <button class="mat-btn" onclick="setMaterial('matte')" id="mat-matte">Matte</button>
+        <button class="mat-btn" onclick="setMaterial('glossy')" id="mat-glossy">Glossy</button>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="section-label">Build Info</div>
+      <div class="stat-row">
+        <span class="stat-label">PARTS SELECTED</span>
+        <span class="stat-value" id="stat-parts">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">EST. HEIGHT</span>
+        <span class="stat-value" id="stat-height">— mm</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">COMPLEXITY</span>
+        <span class="stat-value" id="stat-complexity">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">PRINT TIME EST.</span>
+        <span class="stat-value" id="stat-time">— hrs</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">BUILD ID</span>
+        <span class="stat-value" id="stat-id" style="font-size:9px">GEN-XXXX</span>
+      </div>
+    </div>
+
+    <div class="export-section">
+      <div class="section-label" style="margin-bottom:0">Export Model</div>
+      <button class="btn btn-primary" onclick="exportSTL()">⬇ EXPORT STL</button>
+      <button class="btn btn-accent2" onclick="export3MF()">⬇ EXPORT 3MF <span class="format-badge">COLORS</span></button>
+      <button class="btn btn-secondary" onclick="shareConfig()">⬆ SHARE BUILD</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ============================================================
+//  ROBOT PARTS DATABASE
+//  Each part is built procedurally with Three.js geometry.
+//  Replace these with your actual 3D model loaders (GLB/GLTF).
+// ============================================================
+
+const PARTS_DB = {
+  head: {
+    label: "HEAD",
+    parts: [
+      { id: "head_cube",    name: "CUBE",    icon: "🤖", build: buildHeadCube,    height: 60 },
+      { id: "head_dome",    name: "DOME",    icon: "🪖", build: buildHeadDome,    height: 65 },
+      { id: "head_visor",   name: "VISOR",   icon: "👾", build: buildHeadVisor,   height: 58 },
+      { id: "head_skull",   name: "SKULL",   icon: "💀", build: buildHeadSkull,   height: 70 },
+    ]
+  },
+  torso: {
+    label: "TORSO",
+    parts: [
+      { id: "torso_box",    name: "ARMOR",   icon: "🛡", build: buildTorsoBox,    height: 80 },
+      { id: "torso_slim",   name: "SLIM",    icon: "🎽", build: buildTorsoSlim,   height: 75 },
+      { id: "torso_bulky",  name: "BULKY",   icon: "🏋", build: buildTorsoBulky,  height: 90 },
+      { id: "torso_mech",   name: "MECH",    icon: "⚙️", build: buildTorsoMech,   height: 85 },
+    ]
+  },
+  arms: {
+    label: "ARMS",
+    parts: [
+      { id: "arms_basic",   name: "BASIC",   icon: "💪", build: buildArmsBasic,   height: 70 },
+      { id: "arms_cannon",  name: "CANNON",  icon: "🔫", build: buildArmsCannon,  height: 75 },
+      { id: "arms_claw",    name: "CLAW",    icon: "🦾", build: buildArmsClaw,    height: 72 },
+      { id: "arms_blade",   name: "BLADE",   icon: "⚔️", build: buildArmsBlade,   height: 74 },
+    ]
+  },
+  legs: {
+    label: "LEGS",
+    parts: [
+      { id: "legs_biped",   name: "BIPED",   icon: "🦵", build: buildLegsBiped,   height: 80 },
+      { id: "legs_tank",    name: "TANK",    icon: "🚂", build: buildLegsTank,    height: 40 },
+      { id: "legs_spider",  name: "SPIDER",  icon: "🕷", build: buildLegsSpider,  height: 50 },
+      { id: "legs_hover",   name: "HOVER",   icon: "🛸", build: buildLegsHover,   height: 35 },
+    ]
+  },
+  accessory: {
+    label: "EXTRAS",
+    parts: [
+      { id: "acc_none",     name: "NONE",    icon: "✕",  build: buildAccNone,     height: 0 },
+      { id: "acc_antenna",  name: "ANTENNA", icon: "📡", build: buildAccAntenna,  height: 30 },
+      { id: "acc_jetpack",  name: "JETPACK", icon: "🚀", build: buildAccJetpack,  height: 40 },
+      { id: "acc_wings",    name: "WINGS",   icon: "🦋", build: buildAccWings,    height: 20 },
+    ]
+  }
+};
+
+const COLOR_ZONES = [
+  { id: "primary",   label: "Primary",   default: "#00ffe7" },
+  { id: "secondary", label: "Secondary", default: "#1a3a6a" },
+  { id: "accent",    label: "Accent",    default: "#ff6b35" },
+  { id: "dark",      label: "Dark",      default: "#0d1520" },
+];
+
+const COLOR_PRESETS = [
+  "#00ffe7","#ff6b35","#a855f7","#3b82f6","#10b981",
+  "#f59e0b","#ef4444","#ffffff","#6b7280","#1a1a2e"
+];
+
+// ============================================================
+//  STATE
+// ============================================================
+let selectedParts = {};
+let colors = {};
+let material = "standard";
+let robotName = "UNIT-001";
+let scene, camera, renderer, robotGroup, animFrame;
+let isDragging = false, isRightDrag = false;
+let prevMouse = { x: 0, y: 0 };
+let camTheta = 0.4, camPhi = Math.PI / 4, camDist = 5.5;
+let panOffset = { x: 0, y: 0 };
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('load', () => {
+  // init colors
+  COLOR_ZONES.forEach(z => colors[z.id] = z.default);
+
+  // default parts
+  selectedParts = {
+    head: "head_cube",
+    torso: "torso_box",
+    arms: "arms_basic",
+    legs: "legs_biped",
+    accessory: "acc_antenna"
+  };
+
+  initThree();
+  buildUI();
+  buildRobot();
+  updateStats();
+
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1800);
+});
+
+// ============================================================
+//  THREE.JS SETUP
+// ============================================================
+function initThree() {
+  const canvas = document.getElementById('robot-canvas');
+  const container = canvas.parentElement;
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  resize();
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(45, canvas.offsetWidth / canvas.offsetHeight, 0.1, 100);
+  updateCamera();
+
+  // Lights
+  const ambient = new THREE.AmbientLight(0x112244, 0.8);
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0x00ffe7, 1.2);
+  key.position.set(3, 5, 4);
+  key.castShadow = true;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0xff6b35, 0.4);
+  fill.position.set(-3, 2, -2);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xa855f7, 0.3);
+  rim.position.set(0, -2, -4);
+  scene.add(rim);
+
+  // Grid floor
+  const grid = new THREE.GridHelper(10, 20, 0x1a3050, 0x0d1a2a);
+  grid.position.y = -2.5;
+  scene.add(grid);
+
+  // Robot group
+  robotGroup = new THREE.Group();
+  scene.add(robotGroup);
+
+  // Events
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', () => isDragging = false);
+  canvas.addEventListener('wheel', onWheel, { passive: true });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('resize', resize);
+
+  // Touch
+  canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+
+  animate();
+}
+
+function resize() {
+  const canvas = document.getElementById('robot-canvas');
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  renderer.setSize(w, h, false);
+  if (camera) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+}
+
+function updateCamera() {
+  const x = camDist * Math.sin(camPhi) * Math.sin(camTheta);
+  const y = camDist * Math.cos(camPhi);
+  const z = camDist * Math.sin(camPhi) * Math.cos(camTheta);
+  camera.position.set(x + panOffset.x, y + panOffset.y, z);
+  camera.lookAt(panOffset.x, panOffset.y, 0);
+}
+
+function resetCamera() {
+  camTheta = 0.4; camPhi = Math.PI / 4; camDist = 5.5;
+  panOffset = { x: 0, y: 0 };
+  updateCamera();
+}
+
+function animate() {
+  animFrame = requestAnimationFrame(animate);
+  // Gentle auto-rotate when idle (optional)
+  robotGroup.rotation.y += 0.002;
+  renderer.render(scene, camera);
+}
+
+// Mouse controls
+function onMouseDown(e) {
+  isDragging = true;
+  isRightDrag = e.button === 2;
+  prevMouse = { x: e.clientX, y: e.clientY };
+  robotGroup.rotation.y; // pause auto-rotate on interact
+}
+
+function onMouseMove(e) {
+  if (!isDragging) return;
+  const dx = e.clientX - prevMouse.x;
+  const dy = e.clientY - prevMouse.y;
+  prevMouse = { x: e.clientX, y: e.clientY };
+
+  if (isRightDrag) {
+    panOffset.x -= dx * 0.005;
+    panOffset.y += dy * 0.005;
+  } else {
+    camTheta -= dx * 0.01;
+    camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi + dy * 0.01));
+    robotGroup.rotation.y = 0; // stop auto-rotate while dragging
+  }
+  updateCamera();
+}
+
+function onWheel(e) {
+  camDist = Math.max(2, Math.min(12, camDist + e.deltaY * 0.01));
+  updateCamera();
+}
+
+let touchStart = null;
+function onTouchStart(e) {
+  if (e.touches.length === 1) touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}
+function onTouchMove(e) {
+  if (!touchStart || e.touches.length !== 1) return;
+  e.preventDefault();
+  const dx = e.touches[0].clientX - touchStart.x;
+  const dy = e.touches[0].clientY - touchStart.y;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  camTheta -= dx * 0.01;
+  camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi + dy * 0.01));
+  updateCamera();
+}
+
+// ============================================================
+//  MATERIAL HELPER
+// ============================================================
+function makeMat(colorKey, opts = {}) {
+  const hex = colors[colorKey] || "#00ffe7";
+  const col = new THREE.Color(hex);
+  let mat;
+
+  const base = {
+    color: col,
+    ...opts
+  };
+
+  if (material === "metallic") {
+    mat = new THREE.MeshStandardMaterial({ ...base, metalness: 0.9, roughness: 0.1 });
+  } else if (material === "matte") {
+    mat = new THREE.MeshLambertMaterial({ ...base });
+  } else if (material === "glossy") {
+    mat = new THREE.MeshPhongMaterial({ ...base, shininess: 120, specular: new THREE.Color(0xffffff) });
+  } else {
+    mat = new THREE.MeshStandardMaterial({ ...base, metalness: 0.4, roughness: 0.5 });
+  }
+  return mat;
+}
+
+function box(w, h, d, colorKey, opts) {
+  const g = new THREE.BoxGeometry(w, h, d);
+  return new THREE.Mesh(g, makeMat(colorKey, opts));
+}
+
+function cyl(rt, rb, h, segs, colorKey, opts) {
+  const g = new THREE.CylinderGeometry(rt, rb, h, segs);
+  return new THREE.Mesh(g, makeMat(colorKey, opts));
+}
+
+function sph(r, segs, colorKey, opts) {
+  const g = new THREE.SphereGeometry(r, segs, segs);
+  return new THREE.Mesh(g, makeMat(colorKey, opts));
+}
+
+function addTo(parent, mesh, x, y, z) {
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+// ============================================================
+//  PART BUILDERS — HEAD
+// ============================================================
+function buildHeadCube(g) {
+  const grp = new THREE.Group();
+  const main = box(0.7, 0.6, 0.65, "primary");
+  grp.add(main);
+
+  // visor slot
+  const visor = box(0.55, 0.15, 0.05, "accent");
+  visor.position.set(0, 0.05, 0.33);
+  grp.add(visor);
+
+  // eyes
+  [-0.12, 0.12].forEach(x => {
+    const eye = box(0.07, 0.07, 0.04, "accent");
+    eye.position.set(x, 0.05, 0.36);
+    grp.add(eye);
+    // glow
+    const glow = new THREE.PointLight(new THREE.Color(colors.accent), 0.4, 0.5);
+    glow.position.set(x, 0.05, 0.4);
+    grp.add(glow);
+  });
+
+  // ears
+  [-0.38, 0.38].forEach(x => {
+    const ear = box(0.06, 0.3, 0.3, "secondary");
+    ear.position.set(x, 0, 0);
+    grp.add(ear);
+  });
+
+  // antenna
+  const ant = cyl(0.02, 0.02, 0.25, 8, "accent");
+  ant.position.set(0, 0.42, 0);
+  grp.add(ant);
+  const ball = sph(0.05, 8, "accent");
+  ball.position.set(0, 0.56, 0);
+  grp.add(ball);
+
+  return grp;
+}
+
+function buildHeadDome(g) {
+  const grp = new THREE.Group();
+  const dome = sph(0.38, 16, "primary");
+  dome.scale.y = 0.85;
+  grp.add(dome);
+
+  const base = cyl(0.35, 0.38, 0.15, 16, "secondary");
+  base.position.y = -0.22;
+  grp.add(base);
+
+  // visor band
+  const visor = cyl(0.36, 0.36, 0.12, 16, "accent");
+  visor.position.y = -0.02;
+  grp.add(visor);
+
+  const eyeL = sph(0.06, 8, "accent");
+  eyeL.position.set(-0.14, 0.02, 0.32);
+  grp.add(eyeL);
+  const eyeR = sph(0.06, 8, "accent");
+  eyeR.position.set(0.14, 0.02, 0.32);
+  grp.add(eyeR);
+
+  return grp;
+}
+
+function buildHeadVisor(g) {
+  const grp = new THREE.Group();
+  const main = box(0.8, 0.55, 0.7, "secondary");
+  main.scale.set(1, 1, 0.9);
+  grp.add(main);
+
+  // Full visor
+  const visor = box(0.72, 0.2, 0.06, "accent");
+  visor.position.set(0, 0.08, 0.38);
+  grp.add(visor);
+
+  const stripe = box(0.72, 0.04, 0.05, "primary");
+  stripe.position.set(0, -0.08, 0.38);
+  grp.add(stripe);
+
+  // Side vents
+  [-0.42, 0.42].forEach(x => {
+    [0.08, -0.05, -0.18].forEach(y => {
+      const vent = box(0.05, 0.04, 0.25, "dark");
+      vent.position.set(x, y, 0.1);
+      grp.add(vent);
+    });
+  });
+
+  const topPlate = box(0.7, 0.06, 0.6, "primary");
+  topPlate.position.y = 0.3;
+  grp.add(topPlate);
+
+  return grp;
+}
+
+function buildHeadSkull(g) {
+  const grp = new THREE.Group();
+  const cranium = sph(0.36, 12, "primary");
+  cranium.scale.y = 1.1;
+  grp.add(cranium);
+
+  // Jaw
+  const jaw = box(0.55, 0.2, 0.5, "secondary");
+  jaw.position.y = -0.28;
+  grp.add(jaw);
+
+  // Eye sockets
+  [-0.15, 0.15].forEach(x => {
+    const socket = sph(0.1, 8, "dark");
+    socket.position.set(x, 0.08, 0.3);
+    grp.add(socket);
+    const pupil = sph(0.06, 8, "accent");
+    pupil.position.set(x, 0.08, 0.34);
+    grp.add(pupil);
+    const gl = new THREE.PointLight(new THREE.Color(colors.accent), 0.5, 0.6);
+    gl.position.set(x, 0.08, 0.4);
+    grp.add(gl);
+  });
+
+  // Teeth
+  for (let i = -2; i <= 2; i++) {
+    const tooth = box(0.05, 0.08, 0.06, "primary");
+    tooth.position.set(i * 0.1, -0.22, 0.28);
+    grp.add(tooth);
+  }
+
+  return grp;
+}
+
+// ============================================================
+//  PART BUILDERS — TORSO
+// ============================================================
+function buildTorsoBox(g) {
+  const grp = new THREE.Group();
+  const main = box(0.9, 1.0, 0.6, "primary");
+  grp.add(main);
+
+  // chest plate
+  const plate = box(0.6, 0.5, 0.08, "secondary");
+  plate.position.set(0, 0.15, 0.34);
+  grp.add(plate);
+
+  // core light
+  const core = box(0.14, 0.14, 0.06, "accent");
+  core.position.set(0, 0.15, 0.38);
+  grp.add(core);
+  const gl = new THREE.PointLight(new THREE.Color(colors.accent), 0.6, 1);
+  gl.position.set(0, 0.15, 0.5);
+  grp.add(gl);
+
+  // shoulder connectors
+  [-0.52, 0.52].forEach(x => {
+    const sc = cyl(0.12, 0.12, 0.15, 8, "secondary");
+    sc.rotation.z = Math.PI / 2;
+    sc.position.set(x, 0.35, 0);
+    grp.add(sc);
+  });
+
+  // vents bottom
+  for (let i = -1; i <= 1; i++) {
+    const vent = box(0.12, 0.04, 0.07, "dark");
+    vent.position.set(i * 0.22, -0.3, 0.32);
+    grp.add(vent);
+  }
+
+  return grp;
+}
+
+function buildTorsoSlim(g) {
+  const grp = new THREE.Group();
+  const main = box(0.7, 0.95, 0.5, "primary");
+  grp.add(main);
+
+  // Sleek chest stripe
+  const stripe = box(0.08, 0.8, 0.07, "accent");
+  stripe.position.set(0, 0, 0.3);
+  grp.add(stripe);
+
+  [-0.42, 0.42].forEach(x => {
+    const sc = cyl(0.09, 0.09, 0.12, 8, "secondary");
+    sc.rotation.z = Math.PI / 2;
+    sc.position.set(x, 0.35, 0);
+    grp.add(sc);
+  });
+
+  // Abs panels
+  for (let r = 0; r < 3; r++) {
+    [-0.14, 0.14].forEach(x => {
+      const p = box(0.12, 0.12, 0.06, "secondary");
+      p.position.set(x, -0.05 - r * 0.16, 0.28);
+      grp.add(p);
+    });
+  }
+
+  return grp;
+}
+
+function buildTorsoBulky(g) {
+  const grp = new THREE.Group();
+  const main = box(1.1, 1.05, 0.75, "primary");
+  grp.add(main);
+
+  // Heavy chest
+  const chest = box(0.75, 0.55, 0.12, "secondary");
+  chest.position.set(0, 0.2, 0.43);
+  grp.add(chest);
+
+  const core = sph(0.12, 8, "accent");
+  core.position.set(0, 0.2, 0.52);
+  grp.add(core);
+  const gl = new THREE.PointLight(new THREE.Color(colors.accent), 0.8, 1.2);
+  gl.position.set(0, 0.2, 0.6);
+  grp.add(gl);
+
+  [-0.62, 0.62].forEach(x => {
+    const sc = cyl(0.16, 0.16, 0.2, 8, "secondary");
+    sc.rotation.z = Math.PI / 2;
+    sc.position.set(x, 0.35, 0);
+    grp.add(sc);
+    // Armor spikes
+    const spike = box(0.1, 0.3, 0.1, "accent");
+    spike.position.set(x * 1.12, 0.55, 0);
+    grp.add(spike);
+  });
+
+  return grp;
+}
+
+function buildTorsoMech(g) {
+  const grp = new THREE.Group();
+  const main = box(0.88, 1.0, 0.65, "secondary");
+  grp.add(main);
+
+  // exposed machinery
+  [0.2, 0, -0.2].forEach(y => {
+    const cog = cyl(0.1, 0.1, 0.07, 6, "accent");
+    cog.rotation.x = Math.PI / 2;
+    cog.position.set(0.2, y, 0.36);
+    grp.add(cog);
+  });
+
+  // Pipes
+  [-0.3, 0.3].forEach(x => {
+    const pipe = cyl(0.04, 0.04, 0.7, 6, "primary");
+    pipe.position.set(x, 0, 0.32);
+    grp.add(pipe);
+  });
+
+  // Panel
+  const panel = box(0.5, 0.35, 0.07, "dark");
+  panel.position.set(-0.1, 0.25, 0.36);
+  grp.add(panel);
+
+  [-0.6, 0.6].forEach(x => {
+    const sc = cyl(0.12, 0.12, 0.18, 8, "primary");
+    sc.rotation.z = Math.PI / 2;
+    sc.position.set(x, 0.35, 0);
+    grp.add(sc);
+  });
+
+  return grp;
+}
+
+// ============================================================
+//  PART BUILDERS — ARMS
+// ============================================================
+function buildArmsBasic(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const arm = new THREE.Group();
+    const upper = box(0.22, 0.42, 0.22, "primary");
+    upper.position.y = -0.21;
+    arm.add(upper);
+    const elbow = cyl(0.13, 0.13, 0.08, 8, "secondary");
+    elbow.position.y = -0.44;
+    arm.add(elbow);
+    const lower = box(0.18, 0.38, 0.18, "secondary");
+    lower.position.y = -0.67;
+    arm.add(lower);
+    const hand = box(0.2, 0.18, 0.15, "primary");
+    hand.position.y = -0.92;
+    arm.add(hand);
+    // fingers
+    [-0.06, 0, 0.06].forEach(x => {
+      const f = box(0.04, 0.1, 0.05, "dark");
+      f.position.set(x, -1.04, 0.04);
+      arm.add(f);
+    });
+
+    arm.position.set(side * 0.6, 0.3, 0);
+    grp.add(arm);
+  });
+  return grp;
+}
+
+function buildArmsCannon(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const arm = new THREE.Group();
+    const upper = box(0.22, 0.42, 0.22, "primary");
+    upper.position.y = -0.21;
+    arm.add(upper);
+    const elbow = cyl(0.14, 0.14, 0.1, 8, "secondary");
+    elbow.position.y = -0.44;
+    arm.add(elbow);
+    // cannon
+    const barrel = cyl(0.14, 0.14, 0.5, 8, "secondary");
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, -0.68, 0.18);
+    arm.add(barrel);
+    const tip = cyl(0.1, 0.16, 0.1, 8, "accent");
+    tip.rotation.x = Math.PI / 2;
+    tip.position.set(0, -0.68, 0.45);
+    arm.add(tip);
+    // mount
+    const mount = box(0.25, 0.2, 0.3, "dark");
+    mount.position.set(0, -0.65, 0.08);
+    arm.add(mount);
+
+    arm.position.set(side * 0.6, 0.3, 0);
+    grp.add(arm);
+  });
+  return grp;
+}
+
+function buildArmsClaw(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const arm = new THREE.Group();
+    const upper = box(0.22, 0.4, 0.22, "primary");
+    upper.position.y = -0.2;
+    arm.add(upper);
+    const elbow = cyl(0.13, 0.13, 0.08, 8, "secondary");
+    elbow.position.y = -0.42;
+    arm.add(elbow);
+    const lower = box(0.18, 0.35, 0.18, "secondary");
+    lower.position.y = -0.62;
+    arm.add(lower);
+    // claw base
+    const clawBase = cyl(0.12, 0.12, 0.08, 8, "accent");
+    clawBase.position.y = -0.84;
+    arm.add(clawBase);
+    // claw fingers
+    [[-0.08, 0.1], [0, 0.12], [0.08, 0.1]].forEach(([x, fwd]) => {
+      const cl = box(0.05, 0.18, 0.05, "accent");
+      cl.position.set(x * side, -0.97, fwd);
+      cl.rotation.x = -0.3;
+      arm.add(cl);
+    });
+
+    arm.position.set(side * 0.6, 0.3, 0);
+    grp.add(arm);
+  });
+  return grp;
+}
+
+function buildArmsBlade(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const arm = new THREE.Group();
+    const upper = box(0.2, 0.42, 0.2, "primary");
+    upper.position.y = -0.21;
+    arm.add(upper);
+    const elbow = cyl(0.12, 0.12, 0.08, 8, "dark");
+    elbow.position.y = -0.44;
+    arm.add(elbow);
+    const lower = box(0.17, 0.35, 0.17, "secondary");
+    lower.position.y = -0.64;
+    arm.add(lower);
+
+    // Blade
+    const bladeGeo = new THREE.BoxGeometry(0.06, 0.5, 0.02);
+    const blade = new THREE.Mesh(bladeGeo, makeMat("accent"));
+    blade.position.set(side * 0.06, -0.95, 0.04);
+    blade.rotation.z = side * 0.1;
+    arm.add(blade);
+
+    const guard = box(0.22, 0.04, 0.06, "secondary");
+    guard.position.y = -0.83;
+    arm.add(guard);
+
+    arm.position.set(side * 0.6, 0.3, 0);
+    grp.add(arm);
+  });
+  return grp;
+}
+
+// ============================================================
+//  PART BUILDERS — LEGS
+// ============================================================
+function buildLegsBiped(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const leg = new THREE.Group();
+    const thigh = box(0.24, 0.45, 0.24, "primary");
+    thigh.position.y = -0.22;
+    leg.add(thigh);
+    const knee = cyl(0.14, 0.14, 0.1, 8, "secondary");
+    knee.position.y = -0.48;
+    leg.add(knee);
+    const shin = box(0.2, 0.42, 0.22, "secondary");
+    shin.position.y = -0.73;
+    leg.add(shin);
+    const foot = box(0.22, 0.1, 0.4, "primary");
+    foot.position.set(0, -0.97, 0.08);
+    leg.add(foot);
+
+    leg.position.set(side * 0.28, -0.5, 0);
+    grp.add(leg);
+  });
+  return grp;
+}
+
+function buildLegsTank(g) {
+  const grp = new THREE.Group();
+  // track body
+  const body = box(1.0, 0.22, 0.7, "secondary");
+  body.position.y = -0.11;
+  grp.add(body);
+
+  // wheels
+  [-0.35, 0, 0.35].forEach(x => {
+    [-1, 1].forEach(side => {
+      const wheel = cyl(0.18, 0.18, 0.12, 12, "dark");
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, -0.1, side * 0.4);
+      grp.add(wheel);
+    });
+  });
+
+  // track
+  [-1, 1].forEach(side => {
+    const track = box(0.95, 0.1, 0.08, "primary");
+    track.position.set(0, -0.28, side * 0.4);
+    grp.add(track);
+  });
+
+  return grp;
+}
+
+function buildLegsSpider(g) {
+  const grp = new THREE.Group();
+  const center = sph(0.2, 8, "secondary");
+  center.position.y = -0.2;
+  grp.add(center);
+
+  // 6 legs
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const leg = new THREE.Group();
+
+    const seg1 = box(0.08, 0.35, 0.08, "primary");
+    seg1.position.y = -0.17;
+    leg.add(seg1);
+
+    const seg2 = box(0.06, 0.3, 0.06, "secondary");
+    seg2.position.y = -0.47;
+    seg2.rotation.z = 0.4;
+    leg.add(seg2);
+
+    const tip = sph(0.05, 6, "accent");
+    tip.position.set(0.14, -0.62, 0);
+    leg.add(tip);
+
+    leg.rotation.y = angle;
+    leg.position.set(Math.sin(angle) * 0.22, -0.2, Math.cos(angle) * 0.22);
+    grp.add(leg);
+  }
+
+  return grp;
+}
+
+function buildLegsHover(g) {
+  const grp = new THREE.Group();
+  // hover pad
+  const pad = cyl(0.55, 0.45, 0.12, 16, "secondary");
+  pad.position.y = -0.06;
+  grp.add(pad);
+
+  const ring = cyl(0.52, 0.52, 0.04, 16, "accent");
+  ring.position.y = 0.0;
+  grp.add(ring);
+
+  // thrusters
+  [0, Math.PI/2, Math.PI, Math.PI*1.5].forEach(a => {
+    const thruster = cyl(0.08, 0.12, 0.18, 8, "primary");
+    thruster.position.set(Math.sin(a) * 0.38, -0.15, Math.cos(a) * 0.38);
+    grp.add(thruster);
+
+    const glow = new THREE.PointLight(new THREE.Color(colors.accent), 0.3, 0.5);
+    glow.position.set(Math.sin(a) * 0.38, -0.28, Math.cos(a) * 0.38);
+    grp.add(glow);
+  });
+
+  return grp;
+}
+
+// ============================================================
+//  ACCESSORIES
+// ============================================================
+function buildAccNone(g) { return new THREE.Group(); }
+
+function buildAccAntenna(g) {
+  const grp = new THREE.Group();
+  const base = cyl(0.04, 0.04, 0.35, 6, "secondary");
+  base.position.y = 0.17;
+  grp.add(base);
+  const dish = cyl(0.12, 0.04, 0.08, 8, "primary");
+  dish.position.y = 0.37;
+  grp.add(dish);
+  const tip = sph(0.05, 6, "accent");
+  tip.position.y = 0.44;
+  grp.add(tip);
+  const gl = new THREE.PointLight(new THREE.Color(colors.accent), 0.4, 0.6);
+  gl.position.y = 0.5;
+  grp.add(gl);
+  return grp;
+}
+
+function buildAccJetpack(g) {
+  const grp = new THREE.Group();
+  const pack = box(0.55, 0.5, 0.22, "secondary");
+  pack.position.z = -0.42;
+  grp.add(pack);
+  [-0.16, 0.16].forEach(x => {
+    const nozzle = cyl(0.08, 0.12, 0.2, 8, "primary");
+    nozzle.position.set(x, -0.3, -0.42);
+    grp.add(nozzle);
+    const flame = new THREE.PointLight(new THREE.Color(colors.accent2 || "#ff6b35"), 0.5, 0.7);
+    flame.position.set(x, -0.48, -0.42);
+    grp.add(flame);
+  });
+  const stripe = box(0.55, 0.05, 0.24, "accent");
+  stripe.position.set(0, 0.1, -0.42);
+  grp.add(stripe);
+  return grp;
+}
+
+function buildAccWings(g) {
+  const grp = new THREE.Group();
+  [-1, 1].forEach(side => {
+    const wingGeo = new THREE.BoxGeometry(0.6, 0.04, 0.35);
+    const wing = new THREE.Mesh(wingGeo, makeMat("primary"));
+    wing.position.set(side * 0.55, 0.1, -0.2);
+    wing.rotation.y = side * 0.4;
+    wing.rotation.z = side * 0.15;
+    grp.add(wing);
+
+    const tip = box(0.08, 0.04, 0.1, "accent");
+    tip.position.set(side * 0.88, 0.1, -0.26);
+    grp.add(tip);
+  });
+  return grp;
+}
+
+// ============================================================
+//  BUILD ROBOT
+// ============================================================
+const PART_OFFSETS = {
+  head:      { y: 1.6 },
+  accessory: { y: 2.05 },
+  torso:     { y: 0.5 },
+  arms:      { y: 0.5 },
+  legs:      { y: -0.55 },
+};
+
+function buildRobot() {
+  // Clear
+  while (robotGroup.children.length) robotGroup.remove(robotGroup.children[0]);
+
+  const categories = Object.keys(PARTS_DB);
+  categories.forEach(cat => {
+    const selId = selectedParts[cat];
+    if (!selId) return;
+    const partDef = PARTS_DB[cat].parts.find(p => p.id === selId);
+    if (!partDef) return;
+
+    const mesh = partDef.build();
+    const offset = PART_OFFSETS[cat] || { y: 0 };
+    mesh.position.y = offset.y;
+    robotGroup.add(mesh);
+  });
+
+  updateStats();
+}
+
+function rebuildMaterials() {
+  // Traverse and rebuild materials by replacing them
+  buildRobot();
+}
+
+// ============================================================
+//  UI
+// ============================================================
+function buildUI() {
+  buildCategoryTabs();
+  buildColorZones();
+}
+
+let currentCat = "head";
+
+function buildCategoryTabs() {
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = '';
+  Object.entries(PARTS_DB).forEach(([catId, catData]) => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (catId === currentCat ? ' active' : '');
+    btn.textContent = catData.label;
+    btn.onclick = () => switchCategory(catId);
+    tabs.appendChild(btn);
+  });
+  buildPartsGrid(currentCat);
+}
+
+function switchCategory(catId) {
+  currentCat = catId;
+  document.querySelectorAll('.cat-btn').forEach((b, i) => {
+    b.classList.toggle('active', Object.keys(PARTS_DB)[i] === catId);
+  });
+  buildPartsGrid(catId);
+}
+
+function buildPartsGrid(catId) {
+  const grid = document.getElementById('partsGrid');
+  grid.innerHTML = '';
+  const cat = PARTS_DB[catId];
+  cat.parts.forEach(part => {
+    const card = document.createElement('div');
+    card.className = 'part-card' + (selectedParts[catId] === part.id ? ' selected' : '');
+    card.innerHTML = `
+      <div class="selected-badge"></div>
+      <div class="part-preview">${part.icon}</div>
+      <div class="part-name">${part.name}</div>
+    `;
+    card.onclick = () => selectPart(catId, part.id);
+    grid.appendChild(card);
+  });
+}
+
+function selectPart(catId, partId) {
+  selectedParts[catId] = partId;
+  buildPartsGrid(catId);
+  buildRobot();
+}
+
+function buildColorZones() {
+  const wrap = document.getElementById('colorZones');
+  wrap.innerHTML = '';
+  COLOR_ZONES.forEach(zone => {
+    const row = document.createElement('div');
+    row.className = 'color-zone';
+    row.innerHTML = `
+      <div class="zone-label">${zone.label}</div>
+      <div class="color-picker-wrap">
+        <div class="color-swatch" style="background:${colors[zone.id]}">
+          <input type="color" value="${colors[zone.id]}" 
+            oninput="setColor('${zone.id}', this.value, this.parentElement)"
+            onchange="setColor('${zone.id}', this.value, this.parentElement)">
+        </div>
+        <div class="color-presets">
+          ${COLOR_PRESETS.slice(0,5).map(c => `
+            <div class="preset-dot" style="background:${c}" 
+              onclick="setColor('${zone.id}', '${c}', this.closest('.color-zone').querySelector('.color-swatch'))"></div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+function setColor(zoneId, value, swatchEl) {
+  colors[zoneId] = value;
+  if (swatchEl) swatchEl.style.background = value;
+  rebuildMaterials();
+}
+
+function setMaterial(type) {
+  material = type;
+  document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mat-' + type).classList.add('active');
+  rebuildMaterials();
+}
+
+function updateRobotName(val) {
+  robotName = val.toUpperCase();
+  document.getElementById('robotNameDisplay').textContent = robotName || 'UNIT';
+}
+
+function updateStats() {
+  const partCount = Object.values(selectedParts).filter(Boolean).length;
+  document.getElementById('stat-parts').textContent = partCount;
+
+  let totalH = 0;
+  Object.entries(selectedParts).forEach(([cat, id]) => {
+    const part = PARTS_DB[cat]?.parts.find(p => p.id === id);
+    if (part) totalH += part.height;
+  });
+  document.getElementById('stat-height').textContent = totalH + ' mm';
+
+  const complexity = totalH > 350 ? 'HIGH' : totalH > 250 ? 'MEDIUM' : 'LOW';
+  document.getElementById('stat-complexity').textContent = complexity;
+  document.getElementById('stat-time').textContent = (totalH / 60).toFixed(1);
+
+  const buildId = 'R-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  document.getElementById('stat-id').textContent = buildId;
+}
+
+function randomize() {
+  Object.keys(PARTS_DB).forEach(cat => {
+    const parts = PARTS_DB[cat].parts;
+    selectedParts[cat] = parts[Math.floor(Math.random() * parts.length)].id;
+  });
+  COLOR_ZONES.forEach(zone => {
+    colors[zone.id] = COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)];
+  });
+  const mats = ['standard', 'metallic', 'matte', 'glossy'];
+  setMaterial(mats[Math.floor(Math.random() * mats.length)]);
+  buildColorZones();
+  buildPartsGrid(currentCat);
+  buildRobot();
+  showToast('🎲 RANDOMIZED!');
+}
+
+// ============================================================
+//  EXPORT — STL
+// ============================================================
+function exportSTL() {
+  showToast('⚙ GENERATING STL...');
+
+  setTimeout(() => {
+    try {
+      const stlData = generateSTL();
+      downloadBlob(stlData, robotName + '.stl', 'model/stl');
+      showToast('✓ STL EXPORTED!');
+    } catch(e) {
+      console.error(e);
+      showToast('✗ EXPORT ERROR');
+    }
+  }, 100);
+}
+
+function generateSTL() {
+  // Collect all geometry from robotGroup
+  const triangles = [];
+
+  robotGroup.traverse(obj => {
+    if (!obj.isMesh) return;
+    const geo = obj.geometry.clone();
+    geo.applyMatrix4(obj.matrixWorld);
+
+    const pos = geo.attributes.position;
+    const index = geo.index;
+
+    if (index) {
+      for (let i = 0; i < index.count; i += 3) {
+        const a = index.getX(i), b = index.getX(i+1), c = index.getX(i+2);
+        triangles.push([
+          [pos.getX(a), pos.getY(a), pos.getZ(a)],
+          [pos.getX(b), pos.getY(b), pos.getZ(b)],
+          [pos.getX(c), pos.getY(c), pos.getZ(c)],
+        ]);
+      }
+    } else {
+      for (let i = 0; i < pos.count; i += 3) {
+        triangles.push([
+          [pos.getX(i), pos.getY(i), pos.getZ(i)],
+          [pos.getX(i+1), pos.getY(i+1), pos.getZ(i+1)],
+          [pos.getX(i+2), pos.getY(i+2), pos.getZ(i+2)],
+        ]);
+      }
+    }
+  });
+
+  // Scale to mm (Three.js units * 100 = ~100mm per unit)
+  const scale = 100;
+
+  // Binary STL
+  const buf = new ArrayBuffer(84 + triangles.length * 50);
+  const view = new DataView(buf);
+
+  // Header (80 bytes)
+  const header = `RoboForge STL - ${robotName} - Generated by RoboForge`;
+  for (let i = 0; i < 80; i++) {
+    view.setUint8(i, i < header.length ? header.charCodeAt(i) : 0);
+  }
+
+  view.setUint32(80, triangles.length, true);
+
+  triangles.forEach((tri, idx) => {
+    const off = 84 + idx * 50;
+    // Normal (compute cross product)
+    const [A, B, C] = tri;
+    const u = [B[0]-A[0], B[1]-A[1], B[2]-A[2]];
+    const v = [C[0]-A[0], C[1]-A[1], C[2]-A[2]];
+    const n = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]];
+    const nl = Math.sqrt(n[0]**2+n[1]**2+n[2]**2) || 1;
+    view.setFloat32(off,    n[0]/nl, true);
+    view.setFloat32(off+4,  n[1]/nl, true);
+    view.setFloat32(off+8,  n[2]/nl, true);
+    // Vertices
+    tri.forEach((v, vi) => {
+      view.setFloat32(off + 12 + vi*12,     v[0]*scale, true);
+      view.setFloat32(off + 12 + vi*12 + 4, v[1]*scale, true);
+      view.setFloat32(off + 12 + vi*12 + 8, v[2]*scale, true);
+    });
+    view.setUint16(off + 48, 0, true);
+  });
+
+  return buf;
+}
+
+// ============================================================
+//  EXPORT — 3MF with colors
+// ============================================================
+function export3MF() {
+  showToast('⚙ GENERATING 3MF...');
+  setTimeout(() => {
+    try {
+      const zip = generate3MF();
+      downloadBlob(zip, robotName + '.3mf', 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml');
+      showToast('✓ 3MF WITH COLORS EXPORTED!');
+    } catch(e) {
+      console.error(e);
+      showToast('✗ EXPORT ERROR');
+    }
+  }, 100);
+}
+
+function generate3MF() {
+  // 3MF is a ZIP containing XML. We'll generate a minimal valid 3MF.
+  // Collect meshes with their colors
+  const objects = [];
+  let objId = 1;
+
+  robotGroup.traverse(obj => {
+    if (!obj.isMesh) return;
+    const geo = obj.geometry.clone();
+    geo.applyMatrix4(obj.matrixWorld);
+
+    const pos = geo.attributes.position;
+    const index = geo.index;
+    const vertices = [];
+    const trianglesList = [];
+    const scale = 100;
+
+    // Deduplicate vertices
+    const vMap = new Map();
+    const getV = (x, y, z) => {
+      const key = `${x.toFixed(5)},${y.toFixed(5)},${z.toFixed(5)}`;
+      if (!vMap.has(key)) {
+        vMap.set(key, vertices.length);
+        vertices.push([x * scale, y * scale, z * scale]);
+      }
+      return vMap.get(key);
+    };
+
+    if (index) {
+      for (let i = 0; i < index.count; i += 3) {
+        const a = index.getX(i), b = index.getX(i+1), c = index.getX(i+2);
+        trianglesList.push([
+          getV(pos.getX(a), pos.getY(a), pos.getZ(a)),
+          getV(pos.getX(b), pos.getY(b), pos.getZ(b)),
+          getV(pos.getX(c), pos.getY(c), pos.getZ(c)),
+        ]);
+      }
+    } else {
+      for (let i = 0; i < pos.count; i += 3) {
+        trianglesList.push([
+          getV(pos.getX(i), pos.getY(i), pos.getZ(i)),
+          getV(pos.getX(i+1), pos.getY(i+1), pos.getZ(i+1)),
+          getV(pos.getX(i+2), pos.getY(i+2), pos.getZ(i+2)),
+        ]);
+      }
+    }
+
+    // Get color from material
+    let color = '#888888';
+    if (obj.material && obj.material.color) {
+      const c = obj.material.color;
+      color = '#' + [c.r, c.g, c.b].map(v =>
+        Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+    }
+
+    objects.push({ id: objId++, vertices, triangles: trianglesList, color });
+  });
+
+  // Build 3MF XML
+  const verticesXML = (obj) =>
+    obj.vertices.map(v => `        <vertex x="${v[0].toFixed(4)}" y="${v[1].toFixed(4)}" z="${v[2].toFixed(4)}"/>`).join('\n');
+
+  const trianglesXML = (obj) =>
+    obj.triangles.map(t => `        <triangle v1="${t[0]}" v2="${t[1]}" v3="${t[2]}"/>`).join('\n');
+
+  const objectsXML = objects.map(obj => `
+    <object id="${obj.id}" type="model" p:UUID="${randomUUID()}">
+      <mesh>
+        <vertices>
+${verticesXML(obj)}
+        </vertices>
+        <triangles>
+${trianglesXML(obj)}
+        </triangles>
+      </mesh>
+    </object>`).join('\n');
+
+  const buildItems = objects.map(obj =>
+    `    <item objectid="${obj.id}" p:UUID="${randomUUID()}" printable="1"/>`
+  ).join('\n');
+
+  const model3MF = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="en-US"
+  xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+  xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
+  <metadata name="Designer">RoboForge</metadata>
+  <metadata name="Description">${robotName} - Custom Robot</metadata>
+  <metadata name="Application">RoboForge Robot Customizer</metadata>
+  <resources>
+${objectsXML}
+  </resources>
+  <build>
+${buildItems}
+  </build>
+</model>`;
+
+  // Color sidecar (Bambu/PrusaSlicer style) — simple XML
+  const colorXML = `<?xml version="1.0" encoding="UTF-8"?>
+<config>
+  <object id="1">
+${objects.map((obj, i) => `    <part id="${i+1}" subtype="normal_part">
+      <metadata key="color_hex" value="${obj.color.replace('#','')}"/>
+      <metadata key="name" value="Part_${i+1}"/>
+    </part>`).join('\n')}
+  </object>
+</config>`;
+
+  // Pack into a minimal ZIP
+  const zipBytes = buildMinimalZip([
+    { path: '3D/3dmodel.model', content: model3MF },
+    { path: 'Metadata/model_settings.config', content: colorXML },
+    { path: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+  <Default Extension="config" ContentType="application/xml"/>
+</Types>` },
+    { path: '_rels/.rels', content: `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
+</Relationships>` },
+  ]);
+
+  return zipBytes;
+}
+
+function randomUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// Minimal ZIP builder (no compression, stored)
+function buildMinimalZip(files) {
+  const encoder = new TextEncoder();
+  const entries = [];
+  let offset = 0;
+
+  files.forEach(file => {
+    const pathBytes = encoder.encode(file.path);
+    const dataBytes = encoder.encode(file.content);
+    const crc = crc32(dataBytes);
+
+    // Local file header
+    const local = new Uint8Array(30 + pathBytes.length + dataBytes.length);
+    const lv = new DataView(local.buffer);
+    lv.setUint32(0, 0x04034b50, true); // sig
+    lv.setUint16(4, 20, true);  // version needed
+    lv.setUint16(6, 0, true);   // flags
+    lv.setUint16(8, 0, true);   // compression: stored
+    lv.setUint16(10, 0, true);  // mod time
+    lv.setUint16(12, 0, true);  // mod date
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, dataBytes.length, true);
+    lv.setUint32(22, dataBytes.length, true);
+    lv.setUint16(26, pathBytes.length, true);
+    lv.setUint16(28, 0, true);
+    local.set(pathBytes, 30);
+    local.set(dataBytes, 30 + pathBytes.length);
+
+    entries.push({ local, pathBytes, dataBytes, crc, offset });
+    offset += local.length;
+  });
+
+  // Central directory
+  const cdEntries = entries.map(e => {
+    const cd = new Uint8Array(46 + e.pathBytes.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, 0, true);
+    cv.setUint16(14, 0, true);
+    cv.setUint32(16, e.crc, true);
+    cv.setUint32(20, e.dataBytes.length, true);
+    cv.setUint32(24, e.dataBytes.length, true);
+    cv.setUint16(28, e.pathBytes.length, true);
+    cv.setUint16(30, 0, true);
+    cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true);
+    cv.setUint32(42, e.offset, true);
+    cd.set(e.pathBytes, 46);
+    return cd;
+  });
+
+  const cdSize = cdEntries.reduce((s, c) => s + c.length, 0);
+  const cdOffset = offset;
+
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);
+  ev.setUint16(6, 0, true);
+  ev.setUint16(8, entries.length, true);
+  ev.setUint16(10, entries.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, cdOffset, true);
+  ev.setUint16(20, 0, true);
+
+  const parts = [...entries.map(e => e.local), ...cdEntries, eocd];
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const result = new Uint8Array(total);
+  let pos = 0;
+  parts.forEach(p => { result.set(p, pos); pos += p.length; });
+  return result.buffer;
+}
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i];
+    for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function downloadBlob(data, filename, mime) {
+  const blob = new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  SHARE
+// ============================================================
+function shareConfig() {
+  const config = {
+    name: robotName,
+    parts: selectedParts,
+    colors,
+    material
+  };
+  const encoded = btoa(JSON.stringify(config));
+  const url = window.location.href.split('?')[0] + '?build=' + encoded;
+  navigator.clipboard?.writeText(url).then(() => showToast('🔗 LINK COPIED!'));
+
+  // Also try to load from URL on startup
+}
+
+// Load from URL on startup
+(function loadFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const build = params.get('build');
+  if (!build) return;
+  try {
+    const config = JSON.parse(atob(build));
+    if (config.parts) selectedParts = config.parts;
+    if (config.colors) Object.assign(colors, config.colors);
+    if (config.material) material = config.material;
+    if (config.name) robotName = config.name;
+    document.getElementById('robotName').value = robotName;
+    document.getElementById('robotNameDisplay').textContent = robotName;
+  } catch(e) {}
+})();
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
