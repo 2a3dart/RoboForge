@@ -723,6 +723,7 @@
 
 <!-- THREE.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
 // ============================================================
@@ -735,7 +736,7 @@ const PARTS_DB = {
   head: {
     label: "HEAD",
     parts: [
-      { id: "head_cube",    name: "CUBE",    icon: "01", build: buildHeadCube,    height: 60 },
+      { id: "head_cube",    name: "HEAD 01", icon: "01", build: buildHeadCube,    height: 60 },
       { id: "head_dome",    name: "DOME",    icon: "02", build: buildHeadDome,    height: 65 },
       { id: "head_visor",   name: "VISOR",   icon: "03", build: buildHeadVisor,   height: 58 },
       { id: "head_skull",   name: "SKULL",   icon: "04", build: buildHeadSkull,   height: 70 },
@@ -1045,42 +1046,52 @@ function addTo(parent, mesh, x, y, z) {
 // ============================================================
 //  PART BUILDERS — HEAD
 // ============================================================
+
+// GLB loader helper — loads your real 3D models from GitHub
+function loadGLB(url, targetGroup, onLoad) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    url,
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse(child => {
+        if (child.isMesh) {
+          // Keep the model's original base color but fix
+          // roughness/metalness so it reads well under white lighting
+          const existingColor = child.material && child.material.color
+            ? child.material.color.clone()
+            : new THREE.Color(0xcccccc);
+          child.material = new THREE.MeshStandardMaterial({
+            color: existingColor,
+            metalness: 0.1,
+            roughness: 0.55,
+          });
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      // Auto-center and scale to fit app units
+      const bbox = new THREE.Box3().setFromObject(model);
+      const center = bbox.getCenter(new THREE.Vector3());
+      const size = bbox.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 1.2 / maxDim;
+      model.scale.setScalar(scale);
+      model.position.sub(center.multiplyScalar(scale));
+      targetGroup.add(model);
+      if (onLoad) onLoad(model);
+    },
+    undefined,
+    (err) => console.error('GLB load error:', err)
+  );
+}
+
 function buildHeadCube(g) {
   const grp = new THREE.Group();
-  const main = box(0.7, 0.6, 0.65, "primary");
-  grp.add(main);
-
-  // visor slot
-  const visor = box(0.55, 0.15, 0.05, "accent");
-  visor.position.set(0, 0.05, 0.33);
-  grp.add(visor);
-
-  // eyes
-  [-0.12, 0.12].forEach(x => {
-    const eye = box(0.07, 0.07, 0.04, "accent");
-    eye.position.set(x, 0.05, 0.36);
-    grp.add(eye);
-    // glow
-    const glow = new THREE.PointLight(new THREE.Color(colors.accent), 0.4, 0.5);
-    glow.position.set(x, 0.05, 0.4);
-    grp.add(glow);
-  });
-
-  // ears
-  [-0.38, 0.38].forEach(x => {
-    const ear = box(0.06, 0.3, 0.3, "secondary");
-    ear.position.set(x, 0, 0);
-    grp.add(ear);
-  });
-
-  // antenna
-  const ant = cyl(0.02, 0.02, 0.25, 8, "accent");
-  ant.position.set(0, 0.42, 0);
-  grp.add(ant);
-  const ball = sph(0.05, 8, "accent");
-  ball.position.set(0, 0.56, 0);
-  grp.add(ball);
-
+  loadGLB(
+    'https://raw.githubusercontent.com/2a3dart/RoboForge/main/models/head_01.glb',
+    grp
+  );
   return grp;
 }
 
